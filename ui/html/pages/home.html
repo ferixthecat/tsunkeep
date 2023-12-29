@@ -2,5 +2,26 @@
 
 {{define "main"}}
     <h2>Tsundoku List</h2>
-    <p>Nothing to see here yet</p>
+    {{if .Books}}
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Added</th>
+            <th>Status</th>
+            <th>ID</th>
+        </tr>
+        {{range .Books}}
+        <tr>
+            <td><a href='/books/view/{{.ID}}'>{{.Title}}</a></td>
+            <td>{{.Author}}</td>
+            <td>{{humanDate .Added}}</td>
+            <td>{{.Status}}</td>
+            <td>{{.ID}}</td>
+        </tr>
+        {{end}}
+    </table>
+    {{else}}
+        <p>There's nothing to see here... yet!</p>
+    {{end}}
 {{end}}

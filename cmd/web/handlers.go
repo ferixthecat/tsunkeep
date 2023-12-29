@@ -1,71 +1,70 @@
 package main
 
 import (
-	"fmt"
-	"html/template"
-	"log"
+	"errors"
 	"net/http"
 	"strconv"
+
+	"tsundokukeeper/internal/models"
+
+	"github.com/julienschmidt/httprouter"
 )
 
-func home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
+	userID := extractUserIDFromRequest(r)
+
+	books, err := app.books.Finished(userID)
+	if err != nil {
+		app.serverError(w, r, err)
 		return
 	}
 
-	files := []string{
-		"./ui/html/base.html",
-		"./ui/html/partials/nav.html",
-		"./ui/html/pages/home.html",
-	}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+	app.render(w, r, http.StatusOK, "home.html", templateData{
+		Books: books,
+	})
 }
 
-func about(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/about" {
-		http.NotFound(w, r)
-		return
-	}
-	w.Write([]byte("about TsundokuKeeper"))
+func (app *application) about(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display the origin of the meaning tsundoku and the app..."))
 }
 
-func tsunbookView(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+func (app *application) tsunbookView(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil || id < 1 {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 
-	fmt.Fprintf(w, "Display a specific book with ID %d...", id)
+	userID := extractUserIDFromRequest(r)
+
+	book, err := app.books.Get(userID, id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, r, err)
+		}
+		return
+	}
+
+	app.render(w, r, http.StatusOK, "view.html", templateData{
+		Book: book,
+	})
 }
 
-func addBook(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		w.Header().Set("Allow", "POST")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	w.Write([]byte("Add a new book..."))
+func (app *application) addBook(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display form for adding a new book..."))
 }
 
-func stats(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/stats" {
-		http.NotFound(w, r)
-		return
-	}
-	w.Write([]byte("personal tsundoku stats!"))
+func (app *application) addBookPost(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display added book..."))
+}
+
+func (app *application) stats(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("DIsplay different stats of finished/unfinished books..."))
+}
+
+func extractUserIDFromRequest(r *http.Request) int {
+	return 0
 }

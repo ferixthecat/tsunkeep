@@ -1,0 +1,20 @@
+{{define "title"}}Book #{{.Book.ID}}{{end}}
+
+{{define "main"}}
+    {{with .Book}}
+    <div class="book">
+        <div class="metadata">
+            <strong>{{.Title}}</strong>
+            <span>#{{.ID}}</span>
+        </div>
+        <div class="data">
+            <p>{{.Author}}</p>
+            <p>{{.Genres}}</p>
+            <p>{{.Pages}}</p>
+        </div>
+        <div class="metadata">
+            <time>Added: {{humanDate .Added}}</time>
+            <span>Status: {{.Status}}</span>
+        </div>
+    </div>
+{{end}}
